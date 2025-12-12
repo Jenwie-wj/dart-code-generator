@@ -196,9 +196,32 @@ class HelperGenerator {
       return varName;
     }
 
-    // Check if target should be an enum (complex case - needs value field mapping)
-    // For now, we'll handle enums as-is since the conversion logic is complex
-    // TODO: Implement proper enum conversion
+    // Check if source model should be converted to enum
+    if (toModel.shouldBeEnum) {
+      // Convert from enum-like class to actual enum
+      // Generate a switch statement based on static field values
+      final buffer = StringBuffer();
+      buffer.write('(() {\n');
+      buffer.write('      switch ($varName.value) {\n');
+      
+      for (final staticField in toModel.staticFields) {
+        // Extract the value from the static field initializer
+        // e.g., "GwResUserStatus(value: 'ACTIVE')" -> "ACTIVE"
+        final valuePattern = RegExp(r"value:\s*'([^']+)'");
+        final valueMatch = valuePattern.firstMatch(staticField.value);
+        if (valueMatch != null) {
+          final value = valueMatch.group(1);
+          buffer.write("        case '$value': return $toType.${staticField.name};\n");
+        }
+      }
+      
+      final exceptionMsg = 'Unknown value: \${$varName.value}';
+      buffer.write('        default: throw Exception("$exceptionMsg");\n');
+      buffer.write('      }\n');
+      buffer.write('    })()');
+      
+      return buffer.toString();
+    }
     
     // Generate constructor call with field mappings
     final buffer = StringBuffer('$toType(');
