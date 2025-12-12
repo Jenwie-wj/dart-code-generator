@@ -185,19 +185,21 @@ class HelperGenerator {
   }
 
   String _generateTypeConversion(String varName, String fromType, String toType) {
-    final fromModel = allModels[fromType];
-    final toModel = allModels[toType];
+    // Map the type names to the original model names (GwRes/GwReq)
+    final originalFromType = _getOriginalModelName(fromType);
+    final originalToType = _getOriginalModelName(toType);
+    
+    final fromModel = allModels[originalFromType];
+    final toModel = allModels[originalToType];
 
     if (fromModel == null || toModel == null) {
       return varName;
     }
 
-    // Check if it's an enum conversion
-    if (toModel.shouldBeEnum) {
-      // For enum, we just use the value
-      return '$toType.${_toEnumCase(varName)}';
-    }
-
+    // Check if target should be an enum (complex case - needs value field mapping)
+    // For now, we'll handle enums as-is since the conversion logic is complex
+    // TODO: Implement proper enum conversion
+    
     // Generate constructor call with field mappings
     final buffer = StringBuffer('$toType(');
     final fieldMappings = <String>[];
@@ -205,7 +207,7 @@ class HelperGenerator {
     for (final toField in toModel.fields) {
       final fromField = fromModel.fields.firstWhere(
         (f) => f.name == toField.name,
-        orElse: () => ModelField(name: toField.name, type: 'dynamic'),
+        orElse: () => ModelField(name: '', type: 'dynamic'),
       );
 
       if (fromField.name.isNotEmpty) {
@@ -217,6 +219,16 @@ class HelperGenerator {
     buffer.write(')');
 
     return buffer.toString();
+  }
+
+  // Convert ResXxx/ReqXxx back to GwResXxx/GwReqXxx for model lookup
+  String _getOriginalModelName(String typeName) {
+    if (typeName.startsWith('Res') && !typeName.startsWith('Response')) {
+      return 'GwRes${typeName.substring(3)}';
+    } else if (typeName.startsWith('Req') && !typeName.startsWith('Request')) {
+      return 'GwReq${typeName.substring(3)}';
+    }
+    return typeName;
   }
 
   String _toHelperClassName(String fileName) {
