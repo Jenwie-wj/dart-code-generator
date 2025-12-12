@@ -8,11 +8,13 @@ class ModelField {
   final String name;
   final String type;
   final bool isFinal;
+  final String? comment;
 
   ModelField({
     required this.name,
     required this.type,
     this.isFinal = false,
+    this.comment,
   });
 }
 
@@ -104,6 +106,16 @@ class _ModelVisitor extends RecursiveAstVisitor<void> {
 
     for (final member in node.members) {
       if (member is FieldDeclaration) {
+        // Extract field comment
+        String? comment;
+        final docComment = member.documentationComment;
+        if (docComment != null) {
+          comment = docComment.tokens
+              .map((token) => token.toString())
+              .join('\n')
+              .trim();
+        }
+
         if (member.isStatic) {
           // Static field
           for (final variable in member.fields.variables) {
@@ -119,6 +131,7 @@ class _ModelVisitor extends RecursiveAstVisitor<void> {
               name: variable.name.lexeme,
               type: member.fields.type?.toString() ?? 'dynamic',
               isFinal: member.fields.isFinal,
+              comment: comment,
             ));
           }
         }

@@ -53,6 +53,11 @@ class ModelGenerator {
       } else {
         files[fileName] = _generateClassModel(newModelName, model);
       }
+
+      // Recursively process nested custom types
+      for (final field in model.fields) {
+        _processType(field.type, files, processed);
+      }
     }
   }
 
@@ -76,7 +81,14 @@ class ModelGenerator {
 
       // Fields
       for (final field in model.fields) {
-        buffer.writeln('  final ${field.type} ${field.name};');
+        // Add comment if available
+        if (field.comment != null && field.comment!.isNotEmpty) {
+          buffer.writeln('  ${field.comment}');
+        }
+        
+        // Transform field type from GwRes/GwReq to Res/Req
+        final transformedType = _transformFieldType(field.type);
+        buffer.writeln('  final $transformedType ${field.name};');
       }
     } else {
       buffer.writeln('  const $className();');
@@ -120,6 +132,16 @@ class ModelGenerator {
       return modelName.replaceFirst('GwReq', 'Req');
     }
     return null;
+  }
+
+  String _transformFieldType(String type) {
+    // Transform GwRes and GwReq types in the field type
+    // This handles simple types, generics, and complex types
+    return type
+        .replaceAllMapped(
+            RegExp(r'GwRes(\w+)'), (match) => 'Res${match.group(1)}')
+        .replaceAllMapped(
+            RegExp(r'GwReq(\w+)'), (match) => 'Req${match.group(1)}');
   }
 
   String _toSnakeCase(String input) {

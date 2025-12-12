@@ -196,9 +196,32 @@ class HelperGenerator {
       return varName;
     }
 
-    // Check if target should be an enum (complex case - needs value field mapping)
-    // For now, we'll handle enums as-is since the conversion logic is complex
-    // TODO: Implement proper enum conversion
+    // Check if source model should be converted to enum
+    if (toModel.shouldBeEnum) {
+      // Convert from enum-like class to actual enum
+      // Generate a switch statement based on static field values
+      final buffer = StringBuffer();
+      buffer.write('(() {\n');
+      buffer.write('      switch ($varName.value) {\n');
+      
+      for (final staticField in toModel.staticFields) {
+        // Extract the value from the static field initializer
+        // e.g., "GwResUserStatus(value: 'ACTIVE')" -> "ACTIVE"
+        final valuePattern = RegExp(r"value:\s*'([^']+)'");
+        final valueMatch = valuePattern.firstMatch(staticField.value);
+        if (valueMatch != null) {
+          final value = valueMatch.group(1);
+          buffer.write("        case '$value': return $toType.${staticField.name};\n");
+        }
+      }
+      
+      final exceptionMsg = 'Unknown value: \${$varName.value}';
+      buffer.write('        default: throw Exception("$exceptionMsg");\n');
+      buffer.write('      }\n');
+      buffer.write('    })()');
+      
+      return buffer.toString();
+    }
     
     // Generate constructor call with field mappings
     final buffer = StringBuffer('$toType(');
@@ -211,7 +234,13 @@ class HelperGenerator {
       );
 
       if (fromField.name.isNotEmpty) {
-        fieldMappings.add('${toField.name}: $varName.${fromField.name}');
+        // Check if field type needs conversion (is a custom type)
+        final fieldValue = _generateFieldConversion(
+          '$varName.${fromField.name}',
+          fromField.type,
+          toField.type,
+        );
+        fieldMappings.add('${toField.name}: $fieldValue');
       }
     }
 
@@ -219,6 +248,26 @@ class HelperGenerator {
     buffer.write(')');
 
     return buffer.toString();
+  }
+
+  String _generateFieldConversion(String fieldAccess, String fromType, String toType) {
+    // Check if the type is a custom Gw type that needs conversion
+    final gwPattern = RegExp(r'Gw(?:Res|Req)(\w+)');
+    final gwMatch = gwPattern.firstMatch(fromType);
+    
+    if (gwMatch != null) {
+      // This is a custom type that needs conversion
+      final originalTypeName = gwMatch.group(0)!;
+      final transformedTypeName = _transformModelName(originalTypeName);
+      
+      if (transformedTypeName != null) {
+        // Recursively convert nested custom type
+        return _generateTypeConversion(fieldAccess, originalTypeName, transformedTypeName);
+      }
+    }
+    
+    // For primitive types or types that don't need conversion
+    return fieldAccess;
   }
 
   // Convert ResXxx/ReqXxx back to GwResXxx/GwReqXxx for model lookup
