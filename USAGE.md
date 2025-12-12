@@ -117,9 +117,23 @@ Helper files contain:
 - Abstract class with static methods
 - Automatic type conversion between Gw* and generated models
 - Proper imports for all dependencies
+- Comments indicating where to update import paths
 
 Example output:
 ```dart
+// Generated helper file for user_api.dart
+// This file is auto-generated. Do not edit manually.
+
+// NOTE: Update this import path to point to your original API file:
+// import 'package:your_package/api/user_api.dart';
+
+import '../models/res_user_info.dart';
+import '../models/req_get_user.dart';
+
+// NOTE: Update these import paths to point to your original model files:
+// import 'package:your_package/model/gw_res_user_info.dart';
+// import 'package:your_package/model/gw_req_get_user.dart';
+
 abstract class UserApiHelper {
   static Future<ResUserInfo> getUserInfo(String token, ReqGetUser body) async {
     final GwResUserInfo res = await UserApi().getUserInfo(token, GwReqGetUser(userId: body.userId));
@@ -133,6 +147,37 @@ abstract class UserApiHelper {
 - `res_xxx.dart`: Response models (transformed from `GwResXxx`)
 - `req_xxx.dart`: Request models (transformed from `GwReqXxx`)
 - Models with single `value` field become enums
+
+Example response model (`res_user_info.dart`):
+```dart
+// Generated model class ResUserInfo
+class ResUserInfo {
+  const ResUserInfo({required this.name, required this.age});
+
+  final String name;
+  final int age;
+}
+```
+
+Example request model (`req_get_user.dart`):
+```dart
+// Generated model class ReqGetUser
+class ReqGetUser {
+  const ReqGetUser({required this.userId});
+
+  final String userId;
+}
+```
+
+Example enum (`res_user_status.dart`):
+```dart
+// Generated enum ResUserStatus
+enum ResUserStatus {
+  active,
+  inactive,
+  suspended
+}
+```
 
 ## Transformation Rules
 

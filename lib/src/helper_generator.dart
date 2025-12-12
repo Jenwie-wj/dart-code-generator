@@ -12,12 +12,10 @@ class HelperGenerator {
 
     // Generate imports
     buffer.writeln('// Generated helper file for ${apiClass.originalFileName}');
-    buffer.writeln("import 'dart:async';");
+    buffer.writeln('// This file is auto-generated. Do not edit manually.');
     buffer.writeln();
-
-    // Import the original API file
-    final originalApiFileName = apiClass.originalFileName;
-    buffer.writeln("import '../source/api/$originalApiFileName';");
+    buffer.writeln('// NOTE: Update this import path to point to your original API file:');
+    buffer.writeln("// import 'package:your_package/api/${apiClass.originalFileName}';");
     buffer.writeln();
 
     // Collect all unique model imports needed
@@ -30,7 +28,7 @@ class HelperGenerator {
       }
     }
 
-    // Generate model imports
+    // Generate model imports for generated models
     for (final modelName in requiredModels) {
       final transformedName = _transformModelName(modelName);
       if (transformedName != null && transformedName != 'void') {
@@ -39,10 +37,12 @@ class HelperGenerator {
       }
     }
 
-    // Import original models
+    // Add note about original model imports
+    buffer.writeln();
+    buffer.writeln('// NOTE: Update these import paths to point to your original model files:');
     for (final modelName in requiredModels) {
       if (modelName.startsWith('Gw') && modelName != 'NoneObject') {
-        buffer.writeln("import '../source/model/${_toSnakeCase(modelName)}.dart';");
+        buffer.writeln("// import 'package:your_package/model/${_toSnakeCase(modelName)}.dart';");
       }
     }
 

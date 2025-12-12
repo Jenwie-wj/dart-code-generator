@@ -9,8 +9,9 @@ pubspec.lock
 .vscode/
 *.iml
 
-# Test output
+# Test and example output
 test_output/
+example_output/
 
 # Build artifacts
 *.so
