@@ -1,0 +1,22 @@
+# Dependency directories
+.dart_tool/
+.packages
+build/
+pubspec.lock
+
+# IDE files
+.idea/
+.vscode/
+*.iml
+
+# Test output
+test_output/
+
+# Build artifacts
+*.so
+*.dylib
+*.dll
+
+# Temporary files
+*.tmp
+*.log
