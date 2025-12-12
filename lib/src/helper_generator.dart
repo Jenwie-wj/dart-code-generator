@@ -211,7 +211,13 @@ class HelperGenerator {
       );
 
       if (fromField.name.isNotEmpty) {
-        fieldMappings.add('${toField.name}: $varName.${fromField.name}');
+        // Check if field type needs conversion (is a custom type)
+        final fieldValue = _generateFieldConversion(
+          '$varName.${fromField.name}',
+          fromField.type,
+          toField.type,
+        );
+        fieldMappings.add('${toField.name}: $fieldValue');
       }
     }
 
@@ -219,6 +225,26 @@ class HelperGenerator {
     buffer.write(')');
 
     return buffer.toString();
+  }
+
+  String _generateFieldConversion(String fieldAccess, String fromType, String toType) {
+    // Check if the type is a custom Gw type that needs conversion
+    final gwPattern = RegExp(r'Gw(?:Res|Req)(\w+)');
+    final gwMatch = gwPattern.firstMatch(fromType);
+    
+    if (gwMatch != null) {
+      // This is a custom type that needs conversion
+      final originalTypeName = gwMatch.group(0)!;
+      final transformedTypeName = _transformModelName(originalTypeName);
+      
+      if (transformedTypeName != null) {
+        // Recursively convert nested custom type
+        return _generateTypeConversion(fieldAccess, originalTypeName, transformedTypeName);
+      }
+    }
+    
+    // For primitive types or types that don't need conversion
+    return fieldAccess;
   }
 
   // Convert ResXxx/ReqXxx back to GwResXxx/GwReqXxx for model lookup
