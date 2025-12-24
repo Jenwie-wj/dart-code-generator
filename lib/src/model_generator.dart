@@ -70,13 +70,17 @@ class ModelGenerator {
       final fieldDependencies = _extractDependencies(field.type);
       dependencies.addAll(fieldDependencies);
     }
+    
+    // Remove self-import if present (model shouldn't import itself)
+    final classFileName = _toSnakeCase(className);
+    dependencies.remove(classFileName);
 
     buffer.writeln('// Generated model class $className');
     
     // Add import statements for dependencies
     if (dependencies.isNotEmpty) {
       for (final dep in dependencies.toList()..sort()) {
-        buffer.writeln("import '${dep}.dart';");
+        buffer.writeln("import '$dep.dart';");
       }
       buffer.writeln();
     }
