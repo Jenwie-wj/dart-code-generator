@@ -64,7 +64,27 @@ class ModelGenerator {
   String _generateClassModel(String className, ModelClass model) {
     final buffer = StringBuffer();
 
+    // Collect dependencies (custom types used in fields)
+    final dependencies = <String>{};
+    for (final field in model.fields) {
+      final fieldDependencies = _extractDependencies(field.type);
+      dependencies.addAll(fieldDependencies);
+    }
+    
+    // Remove self-import if present (model shouldn't import itself)
+    final classFileName = _toSnakeCase(className);
+    dependencies.remove(classFileName);
+
     buffer.writeln('// Generated model class $className');
+    
+    // Add import statements for dependencies
+    if (dependencies.isNotEmpty) {
+      for (final dep in dependencies.toList()..sort()) {
+        buffer.writeln("import '$dep.dart';");
+      }
+      buffer.writeln();
+    }
+    
     buffer.writeln('class $className {');
 
     // Constructor
@@ -132,6 +152,26 @@ class ModelGenerator {
       return modelName.replaceFirst('GwReq', 'Req');
     }
     return null;
+  }
+
+  /// Extract custom type dependencies from a field type
+  /// Returns a set of snake_case filenames for import statements
+  Set<String> _extractDependencies(String type) {
+    final dependencies = <String>{};
+    
+    // Extract all GwRes and GwReq types from the field type
+    final pattern = RegExp(r'(Gw(?:Res|Req)\w+)');
+    final matches = pattern.allMatches(type);
+    
+    for (final match in matches) {
+      final modelName = match.group(1)!;
+      final transformedName = _transformModelName(modelName);
+      if (transformedName != null) {
+        dependencies.add(_toSnakeCase(transformedName));
+      }
+    }
+    
+    return dependencies;
   }
 
   String _transformFieldType(String type) {

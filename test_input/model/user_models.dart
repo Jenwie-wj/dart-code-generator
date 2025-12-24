@@ -9,6 +9,17 @@ class GwResUserInfo {
   final int age;
 }
 
+/// Response model for user with status
+class GwResUserWithStatus {
+  const GwResUserWithStatus({required this.name, required this.status});
+  
+  /// User's name
+  final String name;
+  
+  /// User's current status
+  final GwResUserStatus status;
+}
+
 /// Request model for getting user
 class GwReqGetUser {
   const GwReqGetUser({required this.userId});

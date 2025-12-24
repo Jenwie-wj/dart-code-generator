@@ -5,6 +5,11 @@ class UserApi {
     return GwResUserInfo(name: 'John', age: 30);
   }
 
+  Future<GwResUserWithStatus> getUserWithStatus(String userId) async {
+    // Mock API call
+    return GwResUserWithStatus(name: 'John', status: GwResUserStatus.active);
+  }
+
   Future<GwResLoginResult> login(GwReqLogin body) async {
     // Mock API call
     return GwResLoginResult(token: 'abc123', userId: 1);
